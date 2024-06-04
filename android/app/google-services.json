@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "1057277109448",
+    "project_id": "frndschat-a9079",
+    "storage_bucket": "frndschat-a9079.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1057277109448:android:27e9451c1a1baba0ac71fd",
+        "android_client_info": {
+          "package_name": "com.example.frnds_chat"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1057277109448-fdkkk06587hj3m741p34i1fr7d6k9nc1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.frnds_chat",
+            "certificate_hash": "4ea0d6cdc6cab8041f746b1c1131bf73dcadddd3"
+          }
+        },
+        {
+          "client_id": "1057277109448-fi7kntcqkto670iq80js35hn70ojgipk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKTlTHQmS0l9uN5Jrvqgv422rDo1X4j1w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1057277109448-fi7kntcqkto670iq80js35hn70ojgipk.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1057277109448-45tgli1raja6a428t6rrp4t102jemkqt.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.frndsChat"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
