@@ -1,15 +1,9 @@
-import 'dart:developer';
-import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart'; // Add import for flutter_screenutil package
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:frnds_chat/api/apis.dart';
-import 'package:frnds_chat/helper/dialogs.dart';
 import 'package:frnds_chat/helper/my_date_util.dart';
-import 'package:frnds_chat/main.dart';
 import 'package:frnds_chat/models/chat_user.dart';
-import 'package:image_picker/image_picker.dart';
 
 class ViewProfileScreen extends StatefulWidget {
   final ChatUser user;

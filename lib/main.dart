@@ -4,8 +4,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:frnds_chat/firebase_options.dart';
-import 'package:frnds_chat/screens/auth/login_screen.dart';
-import 'package:frnds_chat/screens/home_screens.dart';
 import 'package:frnds_chat/screens/splash_screen.dart';
 
 late Size mq;

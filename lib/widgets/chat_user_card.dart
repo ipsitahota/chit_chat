@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_null_comparison
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -55,7 +57,7 @@ class _ChatUserCardState extends State<ChatUserCard> {
             // Sort messages with timestamp
             messagesWithTime.sort((a, b) {
               if (a.sent != null && b.sent != null) {
-                return b.sent!.compareTo(a.sent!);
+                return b.sent.compareTo(a.sent);
               } else {
                 return 0;
               }

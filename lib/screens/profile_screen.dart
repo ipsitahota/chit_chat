@@ -12,7 +12,6 @@ import 'package:frnds_chat/screens/auth/login_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:frnds_chat/models/chat_user.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 
 class ProfileScreen extends StatefulWidget {
   final ChatUser user;
