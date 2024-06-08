@@ -11,7 +11,7 @@ import 'package:frnds_chat/widgets/dialogs/profile_dialog.dart';
 
 class ChatUserCard extends StatefulWidget {
   final ChatUser user;
-  ChatUserCard({super.key, required this.user});
+  ChatUserCard({Key? key, required this.user}) : super(key: key);
 
   @override
   State<ChatUserCard> createState() => _ChatUserCardState();
@@ -39,25 +39,47 @@ class _ChatUserCardState extends State<ChatUserCard> {
           stream: APIS.getLastMessage(widget.user),
           builder: (context, snapshot) {
             final data = snapshot.data?.docs;
-            final list =
-                data?.map((e) => Message.fromJson(e.data())).toList() ?? [];
-              
-            if (list.isNotEmpty) _message = list[0];
+            final messages = data?.map((e) => Message.fromJson(e.data())).toList() ?? [];
+
+            final List<Message> messagesWithTime = [];
+            final List<Message> messagesWithoutTime = [];
+
+            for (var message in messages) {
+              if (message.sent != null) {
+                messagesWithTime.add(message);
+              } else {
+                messagesWithoutTime.add(message);
+              }
+            }
+
+            // Sort messages with timestamp
+            messagesWithTime.sort((a, b) {
+              if (a.sent != null && b.sent != null) {
+                return b.sent!.compareTo(a.sent!);
+              } else {
+                return 0;
+              }
+            });
+
+            // Combine both lists
+            final List<Message> sortedMessages = [...messagesWithTime, ...messagesWithoutTime];
+
+            if (sortedMessages.isNotEmpty) {
+              _message = sortedMessages[0];
+            }
 
             return ListTile(
               leading: InkWell(
-                onTap: (){
-                  showDialog(context: context, builder: (_)=>ProfileDialog(user: widget.user ));
-                } ,
+                onTap: () {
+                  showDialog(context: context, builder: (_) => ProfileDialog(user: widget.user));
+                },
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(mq.height * .3),
                   child: CachedNetworkImage(
                     width: mq.height * .055,
                     height: mq.height * .055,
                     imageUrl: widget.user.image,
-                    errorWidget: (context, url, error) => CircleAvatar(
-                      child: Icon(CupertinoIcons.person),
-                    ),
+                    errorWidget: (context, url, error) => CircleAvatar(child: Icon(CupertinoIcons.person)),
                   ),
                 ),
               ),

@@ -21,13 +21,7 @@ class MessageCard extends StatefulWidget {
 }
 
 class _MessageCardState extends State<MessageCard> {
-  // late bool isMe;
-
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   isMe = APIS.user.uid == widget.message.fromid;
-  // }
+  final FocusNode _focusNode = FocusNode(); // Add this line
 
   @override
   Widget build(BuildContext context) {
@@ -95,9 +89,16 @@ class _MessageCardState extends State<MessageCard> {
             style: const TextStyle(fontSize: 13, color: Colors.black54),
           ),
         ),
+        // Added this part to display the "Read At" time
+        // if (widget.message.read != null)
+        //   Text(
+        //     'Read At: ${MyDateUtil.getFormattedmsgTime(context: context, time: widget.message.read!)}',
+        //     style: const TextStyle(fontSize: 13, color: Colors.black54),
+        //   ),
       ],
     );
   }
+
 
   Widget _myMessage() {
     return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -257,15 +258,9 @@ class _MessageCardState extends State<MessageCard> {
                         size: 26,
                       ),
                       name: 'Delete Message',
-                      onTap: () async {
-                        await APIS.deleteMessage(widget.message).then((value) {
-                          Navigator.pop(context);
-                          Dialogs.showSnackbar(
-                            context,
-                            'Deleted Successfully!',
-                          );
-                          Navigator.pop(context);
-                        });
+                      onTap: () {
+                        Navigator.pop(context);
+                        _showDeleteConfirmationDialog();
                       },
                     ),
                   Divider(
@@ -276,14 +271,13 @@ class _MessageCardState extends State<MessageCard> {
                   _OptionItem(
                     icon: Icon(Icons.remove_red_eye, color: Colors.blue),
                     name:
-                        'Sent At: ${MyDateUtil.getFormattedmsgTime(context: context, time: widget.message.sent)}',
+                        'Sent At: ${MyDateUtil.getFormattedmsgTime(context: context, time: widget.message.sent)} ',
+
                     onTap: () {},
                   ),
                   _OptionItem(
                     icon: Icon(Icons.remove_red_eye, color: Colors.green),
-                    name: widget.message.read == null
-                        ? 'Read At: Not seen yet'
-                        : 'Read At: ${MyDateUtil.getFormattedmsgTime(context: context, time: widget.message.read!)}',
+                    name: widget.message.read != null?'Read At: ${MyDateUtil.getFormattedmsgTime(context: context, time: widget.message.read!)}':'Read At: Not seen yet',
                     onTap: () {},
                   ),
                 ],
@@ -294,65 +288,104 @@ class _MessageCardState extends State<MessageCard> {
       },
     );
   }
-
-
-
+ 
 
   void _showMessageUpdateDialog() {
     String updatedMsg = widget.message.msg;
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        contentPadding: EdgeInsets.zero, // Set contentPadding to zero
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: Row(
-          children: [
-            Icon(
-              Icons.message,
-              color: Colors.deepPurple.shade400,
-              size: 28,
-            ),
-            Text(' Update Message'),
-          ],
-        ),
-        content: Padding(
-          padding: EdgeInsets.only(left: 24, right: 24, top: 20, bottom: 10),
-          child: TextFormField(
-            initialValue: updatedMsg,
-            maxLines: null,
-            onChanged: (value) => updatedMsg = value,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
+      builder: (_) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _focusNode.requestFocus(); // Request focus to open the keyboard
+        });
+        return AlertDialog(
+          contentPadding: EdgeInsets.zero, // Set contentPadding to zero
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.message,
+                color: Colors.deepPurple.shade400,
+                size: 28,
+              ),
+              Text(' Update Message'),
+            ],
+          ),
+          content: Padding(
+            padding: EdgeInsets.only(left: 24, right: 24, top: 20, bottom: 10),
+            child: TextFormField(
+              focusNode: _focusNode, // Attach the FocusNode
+              initialValue: updatedMsg,
+              maxLines: null,
+              onChanged: (value) => updatedMsg = value,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
               ),
             ),
           ),
-        ),
-        actions: [
-          MaterialButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.deepPurple.shade400, fontSize: 16),
+          actions: [
+            MaterialButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text(
+                'Cancel',
+                style:
+                    TextStyle(color: Colors.deepPurple.shade400, fontSize: 16),
+              ),
             ),
-          ),
-          MaterialButton(
+            MaterialButton(
+              onPressed: () {
+                Navigator.pop(context);
+                APIS.updateMessage(widget.message, updatedMsg);
+                Dialogs.showSnackbar(
+                  context,
+                  'Message Updated Successfully',
+                );
+              },
+              child: Text(
+                'Update',
+                style:
+                    TextStyle(color: Colors.deepPurple.shade400, fontSize: 16),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDeleteConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Confirm Deletion'),
+        content: Text('Are you sure you want to delete this message?'),
+        actions: [
+          TextButton(
             onPressed: () {
               Navigator.pop(context);
-              APIS.updateMessage(widget.message, updatedMsg);
-              Dialogs.showSnackbar(
-                context,
-                'Message Updated Successfully',
-              );
             },
-            child: Text(
-              'Update',
-              style: TextStyle(color: Colors.deepPurple.shade400, fontSize: 16),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await APIS.deleteMessage(widget.message).then((value) {
+                Dialogs.showSnackbar(
+                  context,
+                  'Deleted Successfully!',
+                );
+              });
+            },
+            child: Text('Delete'),
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.red,
             ),
           ),
         ],

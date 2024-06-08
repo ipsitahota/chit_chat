@@ -181,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ? _searchList.length
                                       : _list.length,
                                   padding: EdgeInsets.only(top: mq.height * .01),
-                                  physics: const BouncingScrollPhysics(),
+                                  physics:  BouncingScrollPhysics(),
                                   itemBuilder: (context, index) {
                                     return ChatUserCard(
                                         user: _isSearching

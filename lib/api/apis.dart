@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -7,6 +8,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:frnds_chat/models/chat_user.dart';
 import 'package:frnds_chat/models/message.dart';
+import 'package:http/http.dart';
 
 class APIS {
   static FirebaseAuth auth = FirebaseAuth.instance;
@@ -62,22 +64,19 @@ class APIS {
         .snapshots();
   }
 
-  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllUsers(List<String> userIds) {
-  log('\nUserIds:$userIds');
-  if (userIds.isNotEmpty) {
-    return firestore
-        .collection('users')
-        .where('id', whereIn: userIds)
-        .snapshots();
-  } else {
-    // Return an empty stream or handle this case based on your application's logic
-    return Stream.empty();
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllUsers(
+      List<String> userIds) {
+    log('\nUserIds:$userIds');
+    if (userIds.isNotEmpty) {
+      return firestore
+          .collection('users')
+          .where('id', whereIn: userIds)
+          .snapshots();
+    } else {
+      // Return an empty stream or handle this case based on your application's logic
+      return Stream.empty();
+    }
   }
-}
-
-
-
-
 
   static Future<void> updateuserInfo() async {
     await firestore
@@ -105,21 +104,21 @@ class APIS {
   }
 
   // Modify the getAllMessages method to ensure proper message retrieval
-static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(ChatUser user) {
-  return firestore.collection('chats/${getConversationID(user.id)}/messages/')
-      .orderBy('sent', descending: true)
-      .snapshots();
-}
-
-
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(
+      ChatUser user) {
+    return firestore
+        .collection('chats/${getConversationID(user.id)}/messages/')
+        .orderBy('sent', descending: true)
+        .snapshots();
+  }
 
   static String getConversationID(String id) => user.uid.hashCode <= id.hashCode
       ? '${user.uid}_$id'
       : '${id}_${user.uid}';
 
-
 //------------------------------------------------------------------------------------------------------------------------------------
-  static Future<void> sendMessage(ChatUser chatUser, String msg, Type type) async {
+  static Future<void> sendMessage(
+      ChatUser chatUser, String msg, Type type) async {
     final time = DateTime.now();
     final Message message = Message(
       msg: msg,
@@ -130,66 +129,72 @@ static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(ChatUser user)
       fromid: user.uid,
     );
 
-    final ref = firestore.collection('chats/${getConversationID(chatUser.id)}/messages/');
+    final ref = firestore
+        .collection('chats/${getConversationID(chatUser.id)}/messages/');
     try {
-        await ref.doc(time.millisecondsSinceEpoch.toString()).set(message.toJson());
-        log('Message sent successfully');
+      await ref
+          .doc(time.millisecondsSinceEpoch.toString())
+          .set(message.toJson()).then((value)=>
+          sendPushNotification(chatUser, type==Type.text? msg:'imagr'));
+      log('Message sent successfully');
     } catch (error) {
-        log('Failed to send message: $error');
+      log('Failed to send message: $error');
     }
-}
-
+  }
 
 //---------------------------------------------------------------------------------------------------------------------------------
 
-
   // Modify the sendFirstMessage method to ensure proper message sending
-static Future<void> sendFirstMessage(ChatUser chatUser, String msg, Type type) async {
+  static Future<void> sendFirstMessage(
+      ChatUser chatUser, String msg, Type type) async {
     try {
-        final senderDocRef = firestore.collection('users').doc(user.uid).collection('my_users').doc(chatUser.id);
-        final receiverDocRef = firestore.collection('users').doc(chatUser.id).collection('my_users').doc(user.uid);
+      final senderDocRef = firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('my_users')
+          .doc(chatUser.id);
+      final receiverDocRef = firestore
+          .collection('users')
+          .doc(chatUser.id)
+          .collection('my_users')
+          .doc(user.uid);
 
-        log('Checking if sender and receiver documents exist...');
-        final senderDocSnapshot = await senderDocRef.get();
-        final receiverDocSnapshot = await receiverDocRef.get();
+      log('Checking if sender and receiver documents exist...');
+      final senderDocSnapshot = await senderDocRef.get();
+      final receiverDocSnapshot = await receiverDocRef.get();
 
-        log('Sender Doc Exists: ${senderDocSnapshot.exists}');
-        log('Receiver Doc Exists: ${receiverDocSnapshot.exists}');
+      log('Sender Doc Exists: ${senderDocSnapshot.exists}');
+      log('Receiver Doc Exists: ${receiverDocSnapshot.exists}');
 
-        if (!senderDocSnapshot.exists) {
-            log('Creating sender document...');
-            await senderDocRef.set({});
-            log('Sender document created');
-        }
+      if (!senderDocSnapshot.exists) {
+        log('Creating sender document...');
+        await senderDocRef.set({});
+        log('Sender document created');
+      }
 
-        if (!receiverDocSnapshot.exists) {
-            log('Creating receiver document...');
-            await receiverDocRef.set({});
-            log('Receiver document created');
-        }
+      if (!receiverDocSnapshot.exists) {
+        log('Creating receiver document...');
+        await receiverDocRef.set({});
+        log('Receiver document created');
+      }
 
-        log('Double-checking the receiver document creation...');
-        final newReceiverDocSnapshot = await receiverDocRef.get();
-        if (!newReceiverDocSnapshot.exists) {
-            log('Receiver document creation failed.');
-            return;
-        }
+      log('Double-checking the receiver document creation...');
+      final newReceiverDocSnapshot = await receiverDocRef.get();
+      if (!newReceiverDocSnapshot.exists) {
+        log('Receiver document creation failed.');
+        return;
+      }
 
-        log('Sending the message...');
-        await sendMessage(chatUser, msg, type);
-        log('Message sent successfully');
+      log('Sending the message...');
+      await sendMessage(chatUser, msg, type);
+      log('Message sent successfully');
     } catch (error) {
-        log('Error sending first message: $error');
+      log('Error sending first message: $error');
     }
-}
-
-
-
-
+  }
 
   static Future<void> updateMessageReadStatus(Message message) async {
     try {
-      //log('seen');
       final docRef = firestore
           .collection('chats/${getConversationID(message.fromid)}/messages/')
           .doc(message.sent.millisecondsSinceEpoch.toString());
@@ -206,6 +211,7 @@ static Future<void> sendFirstMessage(ChatUser chatUser, String msg, Type type) a
       log('Failed to update message read status: $e');
     }
   }
+
 
   static Stream<QuerySnapshot<Map<String, dynamic>>> getLastMessage(
       ChatUser user) {
@@ -260,7 +266,7 @@ static Future<void> sendFirstMessage(ChatUser chatUser, String msg, Type type) a
     });
   }
 
- static Future<void> deleteMessage(Message message) async {
+  static Future<void> deleteMessage(Message message) async {
     try {
       final docRef = firestore
           .collection('chats/${getConversationID(message.toid)}/messages/')
@@ -293,36 +299,55 @@ static Future<void> sendFirstMessage(ChatUser chatUser, String msg, Type type) a
     }
   }
 
- static Future<bool> addChatUser(String email) async {
-  // Trim and convert email to lowercase
-  email = email.trim().toLowerCase();
+  static Future<bool> addChatUser(String email) async {
+    // Trim and convert email to lowercase
+    email = email.trim().toLowerCase();
 
-  // Log the email being searched
-  log('Searching for user with email: $email');
+    // Log the email being searched
+    log('Searching for user with email: $email');
 
-  final data = await firestore
-      .collection('users')
-      .where('email', isEqualTo: email)
-      .get();
-
-  // Log the results of the query
-  log('Data: ${data.docs}');
-
-  if (data.docs.isNotEmpty && data.docs.first.id != user.uid) {
-    log('User exists: ${data.docs.first.data()}');
-    firestore
+    final data = await firestore
         .collection('users')
-        .doc(user.uid)
-        .collection('my_users')
-        .doc(data.docs.first.id)
-        .set({});
-    return true;
-  } else {
-    // Log that the user does not exist
-    log('User does not exist or trying to add self');
-    return false;
+        .where('email', isEqualTo: email)
+        .get();
+
+    // Log the results of the query
+    log('Data: ${data.docs}');
+
+    if (data.docs.isNotEmpty && data.docs.first.id != user.uid) {
+      log('User exists: ${data.docs.first.data()}');
+      firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('my_users')
+          .doc(data.docs.first.id)
+          .set({});
+      return true;
+    } else {
+      // Log that the user does not exist
+      log('User does not exist or trying to add self');
+      return false;
+    }
   }
-}
 
-
+  static Future<void> sendPushNotification(
+      ChatUser chatuser, String msg) async {
+    try {
+      final body = {
+        "to": chatuser.pushToken,
+        "notification": {"title": chatuser.name, "body": msg}
+      };
+      var response =
+          await post(Uri.parse('https://fcm.googleapis.com/fcm/send'),
+              headers: {
+                HttpHeaders.contentTypeHeader: 'application/json',
+                HttpHeaders.authorizationHeader: ''
+              },
+              body: jsonEncode(body));
+      log('Response status: ${response.statusCode}');
+      log('Response body: ${response.body}');
+    } catch (e) {
+      log('\nsendPushNotificationE:$e');
+    }
+  }
 }
